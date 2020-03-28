@@ -1,6 +1,4 @@
 //
-//  Task.swift
-//  taskapp
 //
 //  Created by 入子優哉 on 2020/03/28.
 //  Copyright © 2020 yuya.iriko. All rights reserved.
