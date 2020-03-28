@@ -47,6 +47,9 @@ class InputViewController: UIViewController {
             self.task.category = self.categoryTextField.text!
             self.realm.add(self.task, update: .modified)
             }
+        
+            setNotification(task: task)
+        
             super.viewWillDisappear(animated)
         }
     }

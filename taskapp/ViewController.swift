@@ -21,7 +21,6 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     
     var searchActive: Bool = false
     var searchBar: UISearchBar! //検索バーを扱いやすくするための変数
-    var filterArray = try! Realm().objects(Task.self).sorted(byKeyPath: "date", ascending: true)
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -55,15 +54,6 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         }
     }
     
-    func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
-        searchActive = true
-    }
-    
-    func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
-        searchActive = false
-        tableView.reloadData()
-    }
-    
     
     func searchBarShouldBeginEditing(_ searchBar: UISearchBar) -> Bool {
         searchBar.showsCancelButton = true
@@ -72,6 +62,8 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     }
     
     func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+        taskArray = try! Realm().objects(Task.self).sorted(byKeyPath: "date", ascending: true)
+        tableView.reloadData()
         searchBar.showsCancelButton = false
         addButton.isEnabled = true
         searchBar.resignFirstResponder()
@@ -81,9 +73,8 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         
         if searchBar.text != nil {
-            filterArray = realm.objects(Task.self).filter(" category = '\(searchBar.text!)' ").sorted(byKeyPath: "date", ascending: false)
-        } else {
-            filterArray = taskArray
+            let predicate = NSPredicate(format: "category = %@", searchBar.text!)
+            taskArray = realm.objects(Task.self).filter(predicate)
         }
         //テーブルを再読み込みする。
         tableView.reloadData()
@@ -99,11 +90,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     
     //テーブルのリロード時に実行されるメソッド
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if(searchActive){
-            return filterArray.count
-        } else {
             return taskArray.count
-        }
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
