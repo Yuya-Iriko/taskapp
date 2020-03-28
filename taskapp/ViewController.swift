@@ -10,28 +10,100 @@ import UIKit
 import RealmSwift
 import UserNotifications
 
-class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
+class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, UISearchBarDelegate {
     
     @IBOutlet weak var tableView: UITableView!
+    @IBOutlet weak var addButton: UIBarButtonItem!
     
+   
     let realm = try! Realm()
     var taskArray = try! Realm().objects(Task.self).sorted(byKeyPath: "date", ascending: true)
+    
+    var searchActive: Bool = false
+    var searchBar: UISearchBar! //検索バーを扱いやすくするための変数
+    var filterArray = try! Realm().objects(Task.self).sorted(byKeyPath: "date", ascending: true)
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
         tableView.delegate = self
         tableView.dataSource = self
+        //検索バー配置メソッド呼び出し
+        //ここでデリゲート設定するとオブジェクトがないのでエラー
+        setupSearchBar()
     }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        tableView.reloadData()
+    }
+    
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //検索バー配置メソッド
+    func setupSearchBar() {
+        
+        if let navigationBarFrame = navigationController?.navigationBar.bounds {
+            let searchBar: UISearchBar = UISearchBar(frame: navigationBarFrame)
+            searchBar.delegate = self
+            searchBar.placeholder = "カテゴリー検索"
+            searchBar.tintColor = UIColor.black
+            searchBar.keyboardType = UIKeyboardType.default
+            searchBar.enablesReturnKeyAutomatically = false
+            navigationItem.titleView = searchBar
+            //＋ボタンを勝手に避けてくれている
+            navigationItem.titleView?.frame = searchBar.frame
+            self.searchBar = searchBar
+        }
+    }
+    
+    func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
+        searchActive = true
+    }
+    
+    func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
+        searchActive = false
+        tableView.reloadData()
+    }
+    
+    
+    func searchBarShouldBeginEditing(_ searchBar: UISearchBar) -> Bool {
+        searchBar.showsCancelButton = true
+        addButton.isEnabled = false
+        return true
+    }
+    
+    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.showsCancelButton = false
+        addButton.isEnabled = true
+        searchBar.resignFirstResponder()
+    }
+    
+    //テキストの入力に反応してメソッドが呼び出される
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        
+        if searchBar.text != nil {
+            filterArray = realm.objects(Task.self).filter(" category = '\(searchBar.text!)' ").sorted(byKeyPath: "date", ascending: false)
+        } else {
+            filterArray = taskArray
+        }
+        //テーブルを再読み込みする。
+        tableView.reloadData()
+    }
+    
+    
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         tableView.reloadData()
     }
     
-    //テーブルのリロード
+    //テーブルのリロード時に実行されるメソッド
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return taskArray.count
+        if(searchActive){
+            return filterArray.count
+        } else {
+            return taskArray.count
+        }
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
